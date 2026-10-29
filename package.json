@@ -1,0 +1,11 @@
+{
+  "name": "nexus-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nexus Docs — web document editor (OOP source, bundled into a single HTML file)",
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch"
+  },
+  "engines": { "node": ">=18" }
+}

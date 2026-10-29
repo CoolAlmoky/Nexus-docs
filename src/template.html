@@ -1,0 +1,342 @@
+<!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Nexus Docs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Nexus Docs: an online document editor that autosaves on your device, exports .docx, .html, .md and .txt, and supports plugins.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d6f78'/%3E%3Cpath d='M10 7h8l5 5v13H10z' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M13 17h7M13 21h7' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
+<style>
+/* Layout: title bar, formatting toolbar, context strip (table/image/link), below it the outline + an A4 sheet on a blue-grey background */
+:root{
+  --bg:#e6ebee; --bg2:#d9e1e6; --chrome:#f6f8f9; --line:#cdd7dc; --ink:#17262e; --muted:#566872;
+  --accent:#0d6f78; --accent-ink:#ffffff; --accent-soft:#d5eaec; --hover:#e7edf0; --warn:#9a5600; --ok:#1c7a4b;
+  --paper:#ffffff; --paper-ink:#1d2327; --paper-line:#b9c3c9; --paper-accent:#0d6f78; --paper-soft:#eef2f4;
+  --f-ui:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-doc:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --f-mono:'Roboto Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f171b; --bg2:#0a1013; --chrome:#172127; --line:#2a373f; --ink:#e3ebee; --muted:#93a5ae;
+    --accent:#56c2c8; --accent-ink:#06282b; --accent-soft:#183a40; --hover:#212e35; --warn:#e6a23c; --ok:#5fcf93;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f171b; --bg2:#0a1013; --chrome:#172127; --line:#2a373f; --ink:#e3ebee; --muted:#93a5ae;
+  --accent:#56c2c8; --accent-ink:#06282b; --accent-soft:#183a40; --hover:#212e35; --warn:#e6a23c; --ok:#5fcf93;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.4;overflow:hidden}
+button,select,input{font-family:inherit;color:inherit}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#app{height:100%;display:flex;flex-direction:column;min-height:0}
+.bar{background:var(--chrome);border-bottom:1px solid var(--line);flex:none}
+.top{display:flex;align-items:center;gap:10px;padding-block:8px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;letter-spacing:.01em;white-space:nowrap}
+.mark{width:26px;height:26px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+#title{flex:1;min-width:80px;max-width:420px;height:32px;border:1px solid transparent;border-radius:6px;background:transparent;padding:0 8px;font-size:15px;font-weight:600}
+#title:hover{border-color:var(--line)}
+#title:focus{outline:2px solid var(--accent);outline-offset:0;background:var(--bg)}
+#saveState{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+#saveState i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+#saveState.saving i{background:var(--muted)}
+#saveState.warn{color:var(--warn)} #saveState.warn i{background:var(--warn)}
+.spacer{flex:1}
+.cb{height:30px;padding:0 10px;border:1px solid var(--line);background:var(--chrome);border-radius:6px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
+.cb:hover{background:var(--hover)}
+.cb.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cb.pri:hover{filter:brightness(1.08)}
+.cb.danger{color:var(--warn)}
+.cb:focus-visible,.tb:focus-visible,.sel:focus-visible,.docitem:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.toolrow{display:flex;align-items:center;gap:2px;overflow-x:auto;padding-block:6px;scrollbar-width:thin}
+.tb{width:30px;height:30px;border:0;background:transparent;border-radius:6px;display:inline-grid;place-items:center;cursor:pointer;flex:none;font-size:14px}
+.tb:hover{background:var(--hover)}
+.tb.on{background:var(--accent-soft);color:var(--accent)}
+.tb.tx{font-family:var(--f-doc);font-size:15px}
+.tb.tx.i{font-style:italic} .tb.tx.u{text-decoration:underline} .tb.tx.s{text-decoration:line-through}
+.tb.sm{width:24px;font-size:16px}
+.sep{width:1px;height:20px;background:var(--line);margin:0 5px;flex:none}
+.sel{height:30px;border:1px solid var(--line);background:var(--chrome);border-radius:6px;font-size:13px;padding:0 6px;flex:none;max-width:150px}
+#selStyle{width:128px} #selFont{width:132px}
+.size{display:inline-flex;align-items:center;flex:none}
+#size{width:38px;height:28px;text-align:center;border:1px solid var(--line);background:var(--chrome);border-radius:6px;font-size:13px}
+.ctxrow{display:flex;align-items:center;gap:6px;overflow-x:auto;padding-block:6px;scrollbar-width:thin}
+.lab{font-size:12px;color:var(--muted);flex:none;margin-right:2px}
+.work{flex:1;min-height:0;display:flex;gap:12px;padding-block:12px;position:relative}
+#side{width:256px;flex:none;background:var(--chrome);border:1px solid var(--line);border-radius:10px;display:none;flex-direction:column;min-height:0;overflow:hidden}
+.side-open #side{display:flex}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tab{flex:1;height:36px;border:0;background:transparent;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{flex:1;min-height:0;overflow-y:auto;padding:8px}
+.pane[hidden]{display:none}
+.docitem{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:0;background:transparent;border-radius:8px;padding:8px;cursor:pointer;min-width:0}
+.docitem:hover{background:var(--hover)}
+.docitem.cur{background:var(--accent-soft)}
+.docitem .t{flex:1;min-width:0}
+.docitem .t b{display:block;font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.docitem .t small{color:var(--muted);font-size:11.5px}
+.docitem .x{flex:none;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:var(--muted)}
+.docitem .x:hover{background:var(--bg);color:var(--warn)}
+.confirm{display:flex;gap:6px;align-items:center;padding:6px 8px;font-size:12.5px;color:var(--warn)}
+.newdoc{width:100%;justify-content:center;margin-bottom:8px}
+.ol{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ol:hover{background:var(--hover)}
+.ol.l1{font-weight:600} .ol.l2{padding-left:18px} .ol.l3{padding-left:28px;color:var(--muted)} .ol.l4{padding-left:38px;color:var(--muted)}
+.empty{color:var(--muted);font-size:12.5px;padding:8px;margin:0}
+.plug{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)}
+.plug.off{opacity:.8}
+.plug-h{display:flex;align-items:center;gap:8px}
+.plug-h b{flex:1;min-width:0;font-weight:600;font-size:13px}
+.plug p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.plug-b{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.plug-b input[type=number]{width:84px;height:28px;border:1px solid var(--line);background:var(--chrome);border-radius:6px;padding:0 6px;font-size:13px}
+.plug-b label{font-size:12px;color:var(--muted)}
+.tgl{width:34px;height:20px;border-radius:10px;border:0;background:var(--line);position:relative;cursor:pointer;flex:none;padding:0}
+.tgl::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .12s}
+.tgl[aria-checked="true"]{background:var(--accent)}
+.tgl[aria-checked="true"]::after{left:16px}
+.tgl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.canvaswrap{flex:1;min-width:0;position:relative;min-height:0}
+#canvas{position:absolute;inset:0;overflow:auto;background:var(--bg2);border-radius:10px;padding:28px 24px 60px}
+.sheet{width:794px;min-height:1123px;margin:0 auto;background:var(--paper);color:var(--paper-ink);padding:96px var(--mr,96px) 96px var(--ml,96px);box-shadow:0 1px 2px rgb(0 0 0/.14),0 10px 32px rgb(0 0 0/.16);zoom:var(--z,1);outline:none;font-family:var(--f-doc);font-size:11pt;line-height:1.5;white-space:pre-wrap;tab-size:4;overflow-wrap:anywhere;caret-color:var(--paper-ink)}
+.sheet ::selection,.sheet::selection{background:#b4dde0;color:#10181c}
+.sheet p{margin:0 0 8pt}
+.sheet h1{font-size:20pt;line-height:1.25;margin:0 0 10pt;font-weight:700}
+.sheet h2{font-size:16pt;line-height:1.3;margin:16pt 0 6pt;font-weight:700}
+.sheet h3{font-size:13pt;line-height:1.35;margin:12pt 0 4pt;font-weight:700}
+.sheet h4{font-size:11pt;margin:10pt 0 4pt;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.sheet a{color:#0a5f9e;text-decoration:underline}
+.sheet ul,.sheet ol{margin:0 0 8pt;padding-left:1.6em}
+.sheet blockquote{margin:8pt 0;padding:2pt 0 2pt 12pt;border-left:3px solid var(--paper-accent);color:#46555e}
+.sheet pre{font-family:var(--f-mono);font-size:10pt;background:var(--paper-soft);border-radius:4px;padding:10px 12px;margin:0 0 8pt}
+.sheet code{font-family:var(--f-mono);font-size:.92em;background:var(--paper-soft);padding:0 3px;border-radius:3px}
+.sheet table{border-collapse:collapse;width:100%;table-layout:fixed;margin:4pt 0 10pt}
+.sheet td,.sheet th{border:1px solid var(--paper-line);padding:6px 8px;vertical-align:top;min-width:24px;overflow-wrap:anywhere}
+.sheet td p,.sheet th p{margin:0}
+.sheet table.hdr tr:first-child>td,.sheet table.hdr tr:first-child>th{background:var(--paper-soft);font-weight:600}
+.sheet hr{border:0;border-top:1px solid var(--paper-line);margin:14pt 0}
+.sheet hr.pb{border-top:2px dashed var(--paper-line);margin:30px 0}
+.sheet img{max-width:100%;height:auto;vertical-align:bottom}
+.sheet img.img-sel{outline:2px solid var(--paper-accent);outline-offset:2px}
+.sheet ul.check{list-style:none;padding-left:.2em}
+.sheet ul.check>li{position:relative;padding-left:1.7em}
+.sheet ul.check>li::before{content:"";position:absolute;left:0;top:.32em;width:.95em;height:.95em;border:1.6px solid #65747d;border-radius:3px;background:#fff;cursor:pointer}
+.sheet ul.check>li[data-checked="1"]::before{background:var(--paper-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.5 8.4 3 3 6-6.4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/80% no-repeat;border-color:var(--paper-accent)}
+.sheet ul.check>li[data-checked="1"]{color:#7d8b93;text-decoration:line-through}
+::highlight(find){background-color:#ffe08a;color:#1d2327}
+::highlight(find-cur){background-color:#ff9a3c;color:#1d2327}
+.findbar{position:absolute;top:10px;right:22px;z-index:6;background:var(--chrome);border:1px solid var(--line);border-radius:10px;padding:8px;box-shadow:0 8px 28px rgb(0 0 0/.2);display:flex;flex-direction:column;gap:6px;width:min(330px,calc(100% - 28px))}
+.frow{display:flex;align-items:center;gap:4px}
+.frow input{flex:1;min-width:0;height:30px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:0 8px;font-size:13px}
+#fcount{font-size:12px;color:var(--muted);min-width:42px;text-align:center}
+.chk{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status{display:flex;align-items:center;gap:14px;padding-block:6px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);border-bottom:0}
+.status .sel{height:24px;font-size:12px;max-width:none}
+.pop{position:fixed;z-index:50;background:var(--chrome);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 32px rgb(0 0 0/.22);padding:8px;max-width:calc(100vw - 16px)}
+.pop[hidden]{display:none}
+.menu{display:flex;flex-direction:column;min-width:210px}
+.mi{display:flex;align-items:center;gap:8px;border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer}
+.mi:hover{background:var(--hover)}
+.mi small{color:var(--muted);margin-left:auto;font-size:11.5px}
+.mi[disabled]{opacity:.5;cursor:not-allowed}
+.grid8{display:grid;grid-template-columns:repeat(8,22px);gap:4px;margin:8px 0}
+.sw{width:22px;height:22px;border-radius:5px;border:1px solid rgb(0 0 0/.18);cursor:pointer;padding:0}
+.sw:hover{transform:scale(1.12)}
+.palrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px}
+.palrow input[type=color]{width:34px;height:26px;border:1px solid var(--line);background:transparent;padding:0;border-radius:5px}
+.tgrid{display:grid;grid-template-columns:repeat(8,20px);gap:3px}
+.tcell{width:20px;height:20px;border:1px solid var(--line);border-radius:3px;background:var(--bg);cursor:pointer}
+.tcell.hot{background:var(--accent-soft);border-color:var(--accent)}
+.tlabel{text-align:center;font-size:12px;color:var(--muted);margin-top:6px}
+.lpop{display:flex;flex-direction:column;gap:8px;width:290px}
+.lpop label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.lpop input{height:32px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:0 8px;font-size:13px}
+.lbtn{display:flex;gap:6px;justify-content:flex-end}
+#toast{position:fixed;left:50%;bottom:calc(46px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:80;max-width:calc(100vw - 32px);pointer-events:none;opacity:0;transition:opacity .15s}
+#toast.show{opacity:1}
+.fnt-pop{width:min(330px,calc(100vw - 16px))}
+.fnt-wrap{display:flex;flex-direction:column;gap:8px;max-height:min(70vh,460px)}
+.fnt-head{display:flex;align-items:center;gap:8px}
+.fnt-head b{flex:1;font-size:13px;font-weight:600}
+.fnt-list{overflow:auto;display:flex;flex-direction:column;gap:6px;min-height:0}
+.fnt-row{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg)}
+.fnt-row .n{flex:1;min-width:0}
+.fnt-row .n b{display:block;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fnt-row .n small{color:var(--muted);font-size:11.5px}
+.fnt-note{font-size:11.5px;color:var(--muted);margin:0;line-height:1.45}
+.fnt-msg{font-size:12px;color:var(--ink);margin:0;line-height:1.45}
+.fnt-pop.drop{outline:2px dashed var(--accent);outline-offset:2px}
+@media (max-width:860px){
+  .sheet{width:100%;min-height:80vh;padding:28px 20px;zoom:1 !important}
+  #canvas{padding:12px 8px 60px}
+  #side{position:absolute;z-index:20;top:12px;bottom:12px;left:max(16px,env(safe-area-inset-left,0px));width:min(290px,86vw);box-shadow:0 12px 36px rgb(0 0 0/.3)}
+  .brand span,#zoomWrap,#pagesStat{display:none}
+  #saveState span{display:none}
+  .hide-narrow{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+
+<div id="app">
+  <header class="bar"><div class="gut top">
+    <button class="tb" data-act="side" data-i="menu" title="Documents and outline"></button>
+    <div class="brand"><div class="mark" data-i="doc"></div><span>Nexus Docs</span></div>
+    <input id="title" type="text" placeholder="Untitled document" aria-label="Document name" autocomplete="off">
+    <div id="saveState"><i></i><span>Saved</span></div>
+    <div class="spacer"></div>
+    <button class="cb hide-narrow" data-act="import"><span data-ic="upload"></span>Import file</button>
+    <button class="cb pri" data-act="export" data-pop><span data-ic="download"></span>Export</button>
+    <button class="tb" data-act="theme" data-i="moon" title="Toggle light/dark theme"></button>
+  </div></header>
+
+  <div class="bar" id="ribbon"><div class="gut">
+    <div class="ribtabs" role="tablist" aria-label="Ribbon"><button class="rtab" role="tab" aria-selected="true" data-rt="home">Home</button><button class="rtab" role="tab" aria-selected="false" data-rt="page">Page style</button><button class="rtab" role="tab" aria-selected="false" data-rt="anim">Text animations</button></div>
+    <div class="toolrow" id="toolbar" role="toolbar" aria-label="Formatting toolbar">
+    <button class="tb" data-act="undo" data-i="undo" title="Undo (Ctrl+Z)"></button>
+    <button class="tb" data-act="redo" data-i="redo" title="Redo (Ctrl+Y)"></button>
+    <span class="sep"></span>
+    <select id="selStyle" class="sel" aria-label="Paragraph style">
+      <option value="p">Normal text</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option>
+      <option value="h3">Heading 3</option><option value="h4">Heading 4</option><option value="blockquote">Quote</option><option value="pre">Code block</option>
+    </select>
+    <select id="selFont" class="sel" aria-label="Font">
+      <option value="">Other font</option>
+      <option value="Be Vietnam Pro" style="font-family:'Be Vietnam Pro'">Be Vietnam Pro</option>
+      <option value="Source Serif 4" style="font-family:'Source Serif 4'">Source Serif 4</option>
+      <option value="Lora" style="font-family:Lora">Lora</option>
+      <option value="Roboto Mono" style="font-family:'Roboto Mono'">Roboto Mono</option>
+      <option value="Arial" style="font-family:Arial">Arial</option>
+      <option value="Times New Roman" style="font-family:'Times New Roman'">Times New Roman</option>
+      <option value="Georgia" style="font-family:Georgia">Georgia</option>
+      <option value="Verdana" style="font-family:Verdana">Verdana</option>
+      <option value="Courier New" style="font-family:'Courier New'">Courier New</option>
+    </select>
+    <span class="size"><button class="tb sm" data-act="sizeDown" title="Decrease font size" aria-label="Decrease font size">−</button><input id="size" inputmode="decimal" value="11" aria-label="Font size (pt)"><button class="tb sm" data-act="sizeUp" title="Increase font size" aria-label="Increase font size">+</button></span>
+    <span class="sep"></span>
+    <button class="tb tx" data-act="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+    <button class="tb tx i" data-act="italic" title="Italic (Ctrl+I)">I</button>
+    <button class="tb tx u" data-act="underline" title="Underline (Ctrl+U)">U</button>
+    <button class="tb tx s" data-act="strike" title="Strikethrough">S</button>
+    <button class="tb" data-act="colorFore" data-pop data-i="textcolor" id="btnFore" style="--bar:#1d2327" title="Text color"></button>
+    <button class="tb" data-act="colorBack" data-pop data-i="marker" id="btnBack" style="--bar:#fde68a" title="Highlight"></button>
+    <span class="sep"></span>
+    <button class="tb" data-act="link" data-pop data-i="link" id="btnLink" title="Insert link (Ctrl+K)"></button>
+    <button class="tb" data-act="image" data-i="image" title="Insert image"></button>
+    <button class="tb" data-act="table" data-pop data-i="table" id="btnTable" title="Insert table"></button>
+    <span class="sep"></span>
+    <button class="tb" data-act="left" data-i="alignL" title="Align left (Ctrl+Shift+L)"></button>
+    <button class="tb" data-act="center" data-i="alignC" title="Align center (Ctrl+Shift+E)"></button>
+    <button class="tb" data-act="right" data-i="alignR" title="Align right (Ctrl+Shift+R)"></button>
+    <button class="tb" data-act="justify" data-i="alignJ" title="Justify (Ctrl+Shift+J)"></button>
+    <button class="tb" data-act="spacing" data-pop data-i="spacing" title="Line spacing"></button>
+    <span class="sep"></span>
+    <button class="tb" data-act="ul" data-i="ul" title="Bulleted list (Ctrl+Shift+8)"></button>
+    <button class="tb" data-act="ol" data-i="ol" title="Numbered list (Ctrl+Shift+7)"></button>
+    <button class="tb" data-act="check" data-i="check" title="Checklist"></button>
+    <button class="tb" data-act="outdent" data-i="outdent" title="Decrease indent"></button>
+    <button class="tb" data-act="indent" data-i="indent" title="Increase indent"></button>
+    <span class="sep"></span>
+    <button class="tb tx" data-act="sub" title="Subscript">x<sub>2</sub></button>
+    <button class="tb tx" data-act="sup" title="Superscript">x<sup>2</sup></button>
+    <button class="tb" data-act="quote" data-i="quote" title="Quote"></button>
+    <button class="tb" data-act="hr" data-i="hr" title="Horizontal rule"></button>
+    <button class="tb" data-act="pagebreak" data-i="pagebreak" title="Page break (Ctrl+Enter)"></button>
+    <button class="tb" data-act="clear" data-i="clear" title="Clear formatting (Ctrl+\)"></button>
+    <span class="sep"></span>
+    <button class="tb" data-act="find" data-i="search" title="Find and replace (Ctrl+F)"></button>
+  </div>
+    <div class="toolrow ribpage" id="ribPage" role="toolbar" aria-label="Page style" hidden>
+      <div class="rg"><div class="rc"><button class="cb" id="pfxPageMore" data-pop>Page color ▾</button><label class="pfx-chk"><input type="checkbox" id="pfxAuto"> Auto text color</label></div><span class="rl">Page background</span></div>
+      <div id="pfxFxRib" class="pfx-rib pfx-root"></div>
+    </div>
+    <div class="toolrow ribpage" id="ribAnim" role="toolbar" aria-label="Text animations" hidden><div id="nxfRib"></div></div>
+  </div></div>
+
+  <div class="bar" id="ctxbar" hidden><div class="gut"><div class="ctxrow" id="ctx"></div></div></div>
+
+  <div class="work gut" id="work">
+    <aside id="side" aria-label="Documents and outline">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tabDocs" aria-selected="true" data-tab="docs">Documents</button>
+        <button class="tab" role="tab" id="tabOutline" aria-selected="false" data-tab="outline">Outline</button>
+        <button class="tab" role="tab" id="tabPlugins" aria-selected="false" data-tab="plugins">Plugin</button>
+      </div>
+      <div class="pane" id="paneDocs" role="tabpanel">
+        <button class="cb newdoc" data-act="newdoc"><span data-ic="plus"></span>New document</button>
+        <div id="doclist"></div>
+      </div>
+      <div class="pane" id="paneOutline" role="tabpanel" hidden><div id="outline"></div></div>
+      <div class="pane" id="panePlugins" role="tabpanel" hidden>
+        <button class="cb newdoc" data-act="addplug" title="Add a plugin, or update an installed one, from a .js file on your computer"><span data-ic="plus"></span>Add or update plugin from file</button>
+        <div id="plugList"></div>
+      </div>
+    </aside>
+    <div class="canvaswrap">
+      <div id="findbar" class="findbar" hidden role="search">
+        <div class="frow">
+          <input id="fq" placeholder="Find in document" autocomplete="off" aria-label="Search term">
+          <span id="fcount">0/0</span>
+          <button class="tb" data-find="prev" data-i="up" title="Previous result"></button>
+          <button class="tb" data-find="next" data-i="down" title="Next result"></button>
+          <button class="tb" data-find="close" data-i="close" title="Close"></button>
+        </div>
+        <div class="frow">
+          <input id="fr" placeholder="Replace with" autocomplete="off" aria-label="Replace with">
+          <button class="cb" data-find="rep">Replace</button>
+          <button class="cb" data-find="repall">All</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="fcase"> Match case</label>
+      </div>
+      <main id="canvas">
+        <article id="editor" class="sheet" contenteditable="true" spellcheck="true" lang="en" role="textbox" aria-multiline="true" aria-label="Document content"></article>
+      </main>
+    </div>
+  </div>
+
+  <footer class="bar status"><div class="gut" style="display:flex;align-items:center;gap:14px;width:100%">
+    <span id="stats">0 words</span><span id="pagesStat"></span><span id="plugStat"></span>
+    <div class="spacer"></div>
+    <label id="zoomWrap" style="display:flex;align-items:center;gap:6px">Zoom
+      <input id="zoom" class="sel" type="number" min="25" max="400" step="5" value="100" aria-label="Zoom percent" title="Alt + mouse wheel to zoom" style="width:62px"><span>%</span>
+    </label>
+  </div></footer>
+</div>
+
+<input type="file" id="imgFile" accept="image/*" hidden multiple>
+<input type="file" id="impFile" accept=".txt,.md,.html,.htm,text/plain,text/html" hidden>
+<input type="file" id="plugFile" accept=".js,text/javascript,application/javascript" hidden>
+<input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" multiple hidden>
+<div class="pop fnt-pop" id="popFonts" hidden></div>
+
+<div class="pop" id="popColor" hidden>
+  <div class="palrow"><button class="cb" id="palReset">Default</button><label>Custom <input type="color" id="palCustom" value="#0d6f78"></label></div>
+  <div class="grid8" id="palGrid"></div>
+</div>
+<div class="pop" id="popTable" hidden><div class="tgrid" id="tgrid"></div><div class="tlabel" id="tlabel">Choose table size</div></div>
+<div class="pop" id="popLink" hidden>
+  <div class="lpop">
+    <label>Link address<input id="lurl" placeholder="https://" autocomplete="off"></label>
+    <label id="ltextWrap">Display text<input id="ltext" autocomplete="off"></label>
+    <div class="lbtn"><button class="cb" id="lcancel">Cancel</button><button class="cb pri" id="lok">Apply</button></div>
+  </div>
+</div>
+<div class="pop" id="popSpacing" hidden><div class="menu" id="spMenu"></div></div>
+<div class="pop" id="popExport" hidden><div class="menu">
+  <button class="mi" data-exp="docx">Word / Google Docs<small>.docx</small></button>
+  <button class="mi" data-exp="html">Web page<small>.html</small></button>
+  <button class="mi" data-exp="md">Markdown<small>.md</small></button>
+  <button class="mi" data-exp="txt">Plain text<small>.txt</small></button>
+  <button class="mi" data-exp="copytxt">Copy text</button>
+  <button class="mi" data-exp="copyhtml">Copy HTML</button>
+</div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- @SCRIPTS -->
+
+</body></html>
